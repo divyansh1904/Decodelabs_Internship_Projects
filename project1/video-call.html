@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Video Consultation — DocTime</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    /* ── TOKENS ──────────────────────────────────────────── */
+    :root {
+      --teal: #0e7c6e;
+      --teal-lt: rgba(14,124,110,.18);
+      --ink: #0d1117;
+      --surface: rgba(255,255,255,.07);
+      --border: rgba(255,255,255,.12);
+      --muted: rgba(255,255,255,.45);
+      --white: #ffffff;
+      --danger: #e53935;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: #0a0d12;
+      color: #fff;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── TOP BAR ─────────────────────────────────────────── */
+    .top-bar {
+      height: 52px;
+      padding: 0 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      background: rgba(0,0,0,.5);
+      border-bottom: 1px solid var(--border);
+      position: relative; z-index: 100;
+      flex-shrink: 0;
+    }
+    .top-brand {
+      font-size: 16px; font-weight: 700; color: #5fd3c4;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .top-brand svg { width: 18px; height: 18px; stroke: #5fd3c4; fill: none; stroke-width: 2.2; }
+    .top-meta { font-size: 13px; color: var(--muted); }
+    .conn-badge {
+      display: flex; align-items: center; gap: 7px;
+      font-size: 12px; font-weight: 600;
+      padding: 5px 12px;
+      border-radius: 999px;
+      background: rgba(14,124,110,.2);
+      border: 1px solid rgba(14,124,110,.35);
+      color: #5fd3c4;
+    }
+    .conn-dot { width: 7px; height: 7px; background: #5fd3c4; border-radius: 50%; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.7)} }
+
+    /* ── VIDEO GRID ──────────────────────────────────────── */
+    .video-grid {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      padding: 10px;
+      min-height: 0;
+    }
+    .video-tile {
+      position: relative;
+      background: #111820;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .video-tile video {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .tile-label {
+      position: absolute; bottom: 14px; left: 14px;
+      background: rgba(0,0,0,.7);
+      font-size: 12px; font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 999px;
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(255,255,255,.1);
+    }
+    .tile-muted {
+      position: absolute; top: 14px; right: 14px;
+      background: rgba(229,57,53,.8);
+      padding: 5px;
+      border-radius: 8px;
+      display: none;
+    }
+    .tile-muted svg { width: 14px; height: 14px; stroke: #fff; fill: none; stroke-width: 2; }
+    .tile-waiting {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 12px;
+      color: var(--muted);
+    }
+    .tile-waiting svg { width: 48px; height: 48px; stroke: rgba(255,255,255,.2); fill: none; stroke-width: 1.2; }
+
+    /* ── CONTROLS ────────────────────────────────────────── */
+    .controls-bar {
+      height: 80px;
+      display: flex; align-items: center; justify-content: center; gap: 12px;
+      background: rgba(0,0,0,.6);
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+      padding: 0 24px;
+    }
+    .ctrl {
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      transition: background .15s, transform .15s, border-color .15s;
+    }
+    .ctrl svg { width: 19px; height: 19px; stroke: currentColor; fill: none; stroke-width: 2; }
+    .ctrl:hover { background: rgba(255,255,255,.14); transform: translateY(-2px); }
+    .ctrl.on { background: var(--teal-lt); border-color: rgba(14,124,110,.5); color: #5fd3c4; }
+    .ctrl.off { background: rgba(229,57,53,.15); border-color: rgba(229,57,53,.4); color: #ff6b6b; }
+    .ctrl-end {
+      padding: 0 24px; width: auto; border-radius: 24px;
+      background: var(--danger);
+      border-color: var(--danger);
+      font-size: 14px; font-weight: 600; gap: 8px;
+    }
+    .ctrl-end:hover { background: #c62828; border-color: #c62828; transform: translateY(-2px); }
+    .ctrl-end svg { width: 17px; height: 17px; }
+
+    /* ── CHAT PANEL ──────────────────────────────────────── */
+    .chat-panel {
+      position: fixed; right: 0; top: 52px;
+      bottom: 80px;
+      width: 300px;
+      background: #111820;
+      border-left: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      transform: translateX(100%);
+      transition: transform .25s cubic-bezier(.4,0,.2,1);
+      z-index: 50;
+    }
+    .chat-panel.open { transform: translateX(0); }
+    .chat-head {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 14px; font-weight: 600;
+    }
+    .chat-close { color: var(--muted); cursor: pointer; font-size: 18px; line-height: 1; }
+    .chat-close:hover { color: #fff; }
+    .chat-msgs {
+      flex: 1; overflow-y: auto;
+      padding: 14px;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .chat-msg {
+      max-width: 80%;
+      padding: 8px 12px;
+      border-radius: 12px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .chat-msg.sent { background: var(--teal); align-self: flex-end; border-bottom-right-radius: 4px; }
+    .chat-msg.recv { background: rgba(255,255,255,.1); align-self: flex-start; border-bottom-left-radius: 4px; }
+    .chat-msg .msg-who { font-size: 11px; opacity: .6; margin-bottom: 3px; font-weight: 600; }
+    .chat-foot {
+      padding: 12px 14px;
+      border-top: 1px solid var(--border);
+      display: flex; gap: 8px;
+    }
+    .chat-input {
+      flex: 1;
+      background: rgba(255,255,255,.08);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px; color: #fff;
+      outline: none;
+    }
+    .chat-input::placeholder { color: var(--muted); }
+    .chat-input:focus { border-color: rgba(14,124,110,.5); }
+    .chat-send {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--teal);
+      border: none; color: #fff; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: opacity .15s;
+    }
+    .chat-send:hover { opacity: .85; }
+    .chat-send svg { width: 15px; height: 15px; stroke: #fff; fill: none; stroke-width: 2; }
+
+    /* ── SCREEN SHARE BADGE ──────────────────────────────── */
+    .share-badge {
+      position: absolute; top: 14px; left: 14px;
+      background: rgba(14,124,110,.85);
+      font-size: 11px; font-weight: 600; color: #fff;
+      padding: 4px 10px; border-radius: 999px;
+      display: none;
+    }
+
+    @media (max-width: 640px) {
+      .video-grid { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+      .chat-panel { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOP BAR -->
+  <div class="top-bar">
+    <div class="top-brand">
+      <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      DocTime
+    </div>
+    <div class="top-meta" id="callMeta">Consultation Room</div>
+    <div class="conn-badge" id="connBadge">
+      <div class="conn-dot"></div>
+      <span id="connText">Connecting…</span>
+    </div>
+  </div>
+
+  <!-- VIDEO -->
+  <div class="video-grid">
+    <div class="video-tile" id="localTile">
+      <video id="localVideo" autoplay playsinline muted></video>
+      <div class="tile-label" id="localLabel">You</div>
+      <div class="tile-muted" id="localMutedIcon">
+        <svg viewBox="0 0 24 24"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2"/><path d="M12 19v3"/></svg>
+      </div>
+      <div class="share-badge" id="shareBadge">📺 Sharing Screen</div>
+    </div>
+    <div class="video-tile" id="remoteTile">
+      <video id="remoteVideo" autoplay playsinline></video>
+      <div class="tile-waiting" id="waitingOverlay">
+        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span style="font-size:13px;">Waiting for the other participant…</span>
+      </div>
+      <div class="tile-label" id="remoteLabel">Doctor</div>
+    </div>
+  </div>
+
+  <!-- CHAT -->
+  <div class="chat-panel" id="chatPanel">
+    <div class="chat-head">
+      <span>💬 Chat</span>
+      <span class="chat-close" onclick="toggleChat()">✕</span>
+    </div>
+    <div class="chat-msgs" id="chatMsgs">
+      <div style="text-align:center;font-size:12px;color:rgba(255,255,255,.3);padding:8px;">Chat started</div>
+    </div>
+    <div class="chat-foot">
+      <input type="text" class="chat-input" id="chatInput" placeholder="Type a message…" onkeydown="if(event.key==='Enter')sendMsg()">
+      <button class="chat-send" onclick="sendMsg()">
+        <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- CONTROLS -->
+  <div class="controls-bar">
+    <button class="ctrl on" id="btnAudio" onclick="toggleAudio()" title="Mute / Unmute">
+      <svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+    </button>
+    <button class="ctrl on" id="btnVideo" onclick="toggleVideo()" title="Camera on / off">
+      <svg viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+    </button>
+    <button class="ctrl" id="btnScreen" onclick="toggleScreen()" title="Share screen">
+      <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+    </button>
+    <button class="ctrl" id="btnChat" onclick="toggleChat()" title="Toggle chat">
+      <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    </button>
+    <button class="ctrl ctrl-end" onclick="endCall()">
+      <svg viewBox="0 0 24 24"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.42 19.42 0 0 1 4.43 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.34 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.32 9.9a16 16 0 0 0 3.36 3.41z"/></svg>
+      End Call
+    </button>
+  </div>
+
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+  <script>
+    // Parse URL params
+    const params = new URLSearchParams(location.search);
+    const meetingId = params.get('meetingId');
+    const userId    = params.get('userId');
+    const userName  = decodeURIComponent(params.get('userName') || 'You');
+    const role      = params.get('role') || 'patient';
+
+    // Set labels
+    document.getElementById('localLabel').textContent = userName;
+    document.getElementById('remoteLabel').textContent = role === 'doctor' ? 'Patient' : 'Doctor';
+    document.getElementById('callMeta').textContent = `Room: ${meetingId || '—'}`;
+
+    // State
+    let localStream = null;
+    let peerConnection = null;
+    let isAudioOn = true;
+    let isVideoOn = true;
+    let isSharingScreen = false;
+    let socket = null;
+    let chatOpen = false;
+
+    // ICE servers config
+    const ICE_CONFIG = {
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' }
+      ]
+    };
+
+    async function init() {
+      try {
+        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        document.getElementById('localVideo').srcObject = localStream;
+        setConn('Connected', true);
+        connectSignaling();
+      } catch (err) {
+        setConn('Camera / Mic denied', false);
+        console.warn('Media error:', err);
+      }
+    }
+
+    function setConn(txt, ok) {
+      document.getElementById('connText').textContent = txt;
+      document.getElementById('connBadge').style.background =
+        ok ? 'rgba(14,124,110,.2)' : 'rgba(229,57,53,.2)';
+      document.getElementById('connBadge').style.borderColor =
+        ok ? 'rgba(14,124,110,.35)' : 'rgba(229,57,53,.35)';
+      document.getElementById('connBadge').style.color = ok ? '#5fd3c4' : '#ff6b6b';
+      document.getElementById('connDot')?.style && (document.getElementById('connDot').style.background = ok ? '#5fd3c4' : '#ff6b6b');
+    }
+
+    function connectSignaling() {
+      try {
+        socket = io('http://localhost:5000');
+        socket.emit('join-room', { meetingId, userId, userName });
+
+        socket.on('user-joined', async (data) => {
+          document.getElementById('waitingOverlay').style.display = 'none';
+          await createOffer();
+        });
+        socket.on('offer',  async (d) => { await handleOffer(d.offer); });
+        socket.on('answer', async (d) => { await peerConnection.setRemoteDescription(new RTCSessionDescription(d.answer)); });
+        socket.on('ice-candidate', async (d) => {
+          if (peerConnection) await peerConnection.addIceCandidate(new RTCIceCandidate(d.candidate));
+        });
+        socket.on('chat-message', addMsg);
+        socket.on('user-disconnected', () => {
+          document.getElementById('remoteVideo').srcObject = null;
+          document.getElementById('waitingOverlay').style.display = 'flex';
+        });
+      } catch { /* backend not running — UI still functional */ }
+    }
+
+    function createPC() {
+      peerConnection = new RTCPeerConnection(ICE_CONFIG);
+      localStream?.getTracks().forEach(t => peerConnection.addTrack(t, localStream));
+      peerConnection.ontrack = (e) => {
+        document.getElementById('remoteVideo').srcObject = e.streams[0];
+        document.getElementById('waitingOverlay').style.display = 'none';
+      };
+      peerConnection.onicecandidate = (e) => {
+        if (e.candidate && socket) socket.emit('ice-candidate', { meetingId, candidate: e.candidate });
+      };
+    }
+
+    async function createOffer() {
+      createPC();
+      const offer = await peerConnection.createOffer();
+      await peerConnection.setLocalDescription(offer);
+      socket?.emit('offer', { meetingId, offer });
+    }
+
+    async function handleOffer(offer) {
+      createPC();
+      await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+      const answer = await peerConnection.createAnswer();
+      await peerConnection.setLocalDescription(answer);
+      socket?.emit('answer', { meetingId, answer });
+    }
+
+    // ── CONTROLS ──────────────────────────────────────────
+    function toggleAudio() {
+      isAudioOn = !isAudioOn;
+      localStream?.getAudioTracks().forEach(t => t.enabled = isAudioOn);
+      const btn = document.getElementById('btnAudio');
+      btn.classList.toggle('on', isAudioOn);
+      btn.classList.toggle('off', !isAudioOn);
+      document.getElementById('localMutedIcon').style.display = isAudioOn ? 'none' : 'block';
+    }
+
+    function toggleVideo() {
+      isVideoOn = !isVideoOn;
+      localStream?.getVideoTracks().forEach(t => t.enabled = isVideoOn);
+      const btn = document.getElementById('btnVideo');
+      btn.classList.toggle('on', isVideoOn);
+      btn.classList.toggle('off', !isVideoOn);
+    }
+
+    async function toggleScreen() {
+      const btn = document.getElementById('btnScreen');
+      if (!isSharingScreen) {
+        try {
+          const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+          const screenTrack = screenStream.getVideoTracks()[0];
+          const sender = peerConnection?.getSenders().find(s => s.track?.kind === 'video');
+          if (sender) sender.replaceTrack(screenTrack);
+          document.getElementById('localVideo').srcObject = screenStream;
+          document.getElementById('shareBadge').style.display = 'block';
+          isSharingScreen = true;
+          btn.classList.add('on');
+          screenTrack.onended = () => stopScreen();
+        } catch { /* user cancelled */ }
+      } else { stopScreen(); }
+    }
+
+    function stopScreen() {
+      const videoTrack = localStream?.getVideoTracks()[0];
+      const sender = peerConnection?.getSenders().find(s => s.track?.kind === 'video');
+      if (sender && videoTrack) sender.replaceTrack(videoTrack);
+      document.getElementById('localVideo').srcObject = localStream;
+      document.getElementById('shareBadge').style.display = 'none';
+      document.getElementById('btnScreen').classList.remove('on');
+      isSharingScreen = false;
+    }
+
+    function toggleChat() {
+      chatOpen = !chatOpen;
+      document.getElementById('chatPanel').classList.toggle('open', chatOpen);
+      document.getElementById('btnChat').classList.toggle('on', chatOpen);
+    }
+
+    function sendMsg() {
+      const input = document.getElementById('chatInput');
+      const text = input.value.trim();
+      if (!text) return;
+      addMsg({ sender: userName, text, self: true });
+      socket?.emit('chat-message', { meetingId, sender: userName, text });
+      input.value = '';
+    }
+
+    function addMsg({ sender, text, self }) {
+      const msgs = document.getElementById('chatMsgs');
+      const div = document.createElement('div');
+      div.className = `chat-msg ${self ? 'sent' : 'recv'}`;
+      div.innerHTML = `${!self ? `<div class="msg-who">${sender}</div>` : ''}<div>${text}</div>`;
+      msgs.appendChild(div);
+      msgs.scrollTop = msgs.scrollHeight;
+    }
+
+    function endCall() {
+      if (!confirm('End this consultation?')) return;
+      localStream?.getTracks().forEach(t => t.stop());
+      peerConnection?.close();
+      socket?.disconnect();
+      window.close();
+      setTimeout(() => window.location.href = 'dashboard.html', 200);
+    }
+
+    init();
+  </script>
+</body>
+</html>

@@ -1,0 +1,288 @@
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .container {
+        max-width: 95%;
+    }
+}
+
+@media (max-width: 992px) {
+    .hero h1 {
+        font-size: 2.5rem;
+    }
+    
+    .doctor-card {
+        margin-bottom: 20px;
+    }
+}
+
+@media (max-width: 768px) {
+    /* Navigation */
+    .navbar-brand {
+        font-size: 1.2rem;
+    }
+    
+    /* Hero Section */
+    .hero {
+        padding: 60px 0;
+        text-align: center;
+    }
+    
+    .hero h1 {
+        font-size: 1.8rem;
+    }
+    
+    .hero .lead {
+        font-size: 1rem;
+    }
+    
+    /* Dashboard */
+    .dashboard-header {
+        padding: 40px 0;
+    }
+    
+    .dashboard-header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .stat-card {
+        margin-bottom: 15px;
+    }
+    
+    .stat-number {
+        font-size: 24px;
+    }
+    
+    /* Appointments */
+    .appointment-card {
+        text-align: center;
+    }
+    
+    .appointment-card .col-md-3,
+    .appointment-card .col-md-2,
+    .appointment-card .col-md-4 {
+        margin-bottom: 10px;
+    }
+    
+    /* Modals */
+    .modal-dialog {
+        margin: 10px;
+    }
+    
+    /* Forms */
+    .form-control,
+    .form-select {
+        font-size: 16px; /* Prevents zoom on mobile */
+    }
+    
+    /* Buttons */
+    .btn {
+        padding: 8px 16px;
+        font-size: 14px;
+    }
+    
+    /* Features */
+    .feature-card {
+        margin-bottom: 20px;
+    }
+    
+    /* Video Call */
+    .controls {
+        padding: 10px 15px;
+    }
+    
+    .control-btn {
+        width: 45px;
+        height: 45px;
+        font-size: 18px;
+    }
+}
+
+@media (max-width: 576px) {
+    /* Typography */
+    h1 {
+        font-size: 1.5rem;
+    }
+    
+    h2 {
+        font-size: 1.3rem;
+    }
+    
+    h3 {
+        font-size: 1.1rem;
+    }
+    
+    /* Cards */
+    .doctor-card {
+        padding: 15px;
+    }
+    
+    .doctor-card img {
+        width: 80px;
+        height: 80px;
+    }
+    
+    /* Tables */
+    .table-responsive {
+        font-size: 12px;
+    }
+    
+    .table td,
+    .table th {
+        padding: 8px;
+    }
+    
+    /* Buttons in appointments */
+    .appointment-card .btn {
+        margin: 5px;
+        font-size: 12px;
+    }
+    
+    /* Filters */
+    .filter-section .row {
+        flex-direction: column;
+    }
+    
+    .filter-section .col-md-6 {
+        margin-bottom: 10px;
+    }
+    
+    /* Video Call */
+    .video-container {
+        gap: 5px;
+    }
+    
+    .video-label {
+        font-size: 10px;
+        padding: 3px 8px;
+    }
+    
+    .control-btn {
+        width: 35px;
+        height: 35px;
+        font-size: 14px;
+    }
+    
+    .control-btn.end-call {
+        padding: 0 15px;
+    }
+    
+    /* Chat */
+    .chat-container {
+        width: 90%;
+        right: 5%;
+        left: 5%;
+    }
+}
+
+/* Tablet Landscape */
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) {
+    .hero {
+        min-height: 60vh;
+    }
+    
+    .video-container {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .navbar,
+    .controls,
+    .quick-actions,
+    .fab-button {
+        display: none;
+    }
+    
+    body {
+        background: white;
+    }
+    
+    .appointment-card {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: #1a1a1a;
+        color: #ffffff;
+    }
+    
+    .card,
+    .doctor-card,
+    .appointment-card,
+    .profile-section,
+    .stat-card {
+        background-color: #2d2d2d;
+        color: #ffffff;
+    }
+    
+    .text-muted {
+        color: #aaa !important;
+    }
+    
+    .modal-content {
+        background-color: #2d2d2d;
+        color: #ffffff;
+    }
+    
+    .form-control,
+    .form-select {
+        background-color: #3d3d3d;
+        border-color: #4d4d4d;
+        color: #ffffff;
+    }
+    
+    .form-control:focus,
+    .form-select:focus {
+        background-color: #3d3d3d;
+        color: #ffffff;
+    }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+    .btn-primary {
+        background-color: #0000ff;
+        border-color: #0000ff;
+    }
+    
+    .card,
+    .doctor-card {
+        border: 2px solid #000;
+    }
+}
+
+/* Touch Devices */
+@media (hover: none) and (pointer: coarse) {
+    .doctor-card:hover,
+    .feature-card:hover {
+        transform: none;
+    }
+    
+    button,
+    .btn {
+        min-height: 44px; /* Better touch targets */
+    }
+    
+    input,
+    select,
+    textarea {
+        font-size: 16px;
+    }
+}

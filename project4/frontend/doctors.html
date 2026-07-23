@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Find a Doctor — DocTime</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* ── PAGE HEADER ────────────────────────────────────── */
+    .page-header { background: var(--white); border-bottom: 1px solid var(--line); padding: 48px 40px 36px; }
+    .page-header-inner { max-width: 1060px; margin: 0 auto; }
+    .page-header .section-label { margin-bottom: 8px; }
+    .page-header h1 { font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 700; margin-bottom: 24px; }
+
+    /* ── SEARCH + FILTER BAR ────────────────────────────── */
+    .filter-bar { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    .search-wrap { position: relative; flex: 1; min-width: 260px; }
+    .search-wrap svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 17px; height: 17px; stroke: var(--muted); fill: none; stroke-width: 2; pointer-events: none; }
+    .search-wrap input { width: 100%; padding: 10px 14px 10px 40px; border: 1.5px solid var(--line); border-radius: var(--radius-md); font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--ink); outline: none; transition: border-color .15s, box-shadow .15s; }
+    .search-wrap input:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(14,124,110,.12); }
+    .filter-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+    .chip { font-size: 13px; font-weight: 500; padding: 7px 14px; border-radius: 999px; border: 1.5px solid var(--line); color: var(--muted); background: var(--white); cursor: pointer; transition: all .15s; }
+    .chip.active, .chip:hover { border-color: var(--teal); color: var(--teal); background: var(--teal-lt); }
+
+    /* ── GRID ───────────────────────────────────────────── */
+    .content { max-width: 1060px; margin: 0 auto; padding: 40px; }
+    .grid-meta { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+    .doctors-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px,1fr)); gap: 20px; }
+
+    /* ── DOCTOR CARD ────────────────────────────────────── */
+    .doctor-card { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 24px; transition: box-shadow .2s, transform .2s; }
+    .doctor-card:hover { box-shadow: var(--shadow-md); transform: translateY(-3px); }
+    .dc-top { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+    .av-48 { width: 48px; height: 48px; font-size: 15px; }
+    .dc-name { font-size: 15px; font-weight: 600; }
+    .dc-spec { font-size: 13px; color: var(--muted); margin-top: 2px; }
+    .dc-meta { font-size: 13px; color: var(--muted); margin: 12px 0 16px; }
+    .dc-meta strong { color: var(--ink); font-weight: 600; }
+    .dc-bottom { display: flex; gap: 8px; align-items: center; }
+    .dc-bottom .btn-primary { flex: 1; text-align: center; padding: 9px; font-size: 13px; }
+
+    /* ── NO RESULTS ─────────────────────────────────────── */
+    .no-results { grid-column: 1 / -1; text-align: center; padding: 64px 24px; color: var(--muted); }
+
+    @media (max-width: 768px) {
+      .page-header { padding: 32px 20px 24px; }
+      .content { padding: 24px 20px; }
+      .doctors-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="nav">
+    <a class="nav-brand" href="index.html">
+      <div class="nav-brand-mark">
+        <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      </div>
+      DocTime
+    </a>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link">Home</a>
+      <a href="doctors.html" class="nav-link active">Doctors</a>
+    </div>
+    <div class="nav-actions" id="navActions">
+      <button class="btn-ghost" onclick="openModal('login')">Sign In</button>
+      <button class="btn-primary" onclick="openModal('register')">Get Started</button>
+    </div>
+  </nav>
+
+  <div class="page-header">
+    <div class="page-header-inner">
+      <div class="section-label">Our Specialists</div>
+      <h1>Find Your Doctor</h1>
+      <div class="filter-bar">
+        <div class="search-wrap">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" id="searchInput" placeholder="Search by name or specialty…" oninput="filterDoctors()">
+        </div>
+        <div class="filter-chips" id="chips">
+          <button class="chip active" data-spec="all" onclick="setChip(this,'all')">All</button>
+          
+          <button class="chip" data-spec="psychiatry" onclick="setChip(this,'psychiatry')">Psychiatry</button>
+          <button class="chip" data-spec="ophthalmology" onclick="setChip(this,'ophthalmology')">Ophthalmology</button>
+          <button class="chip" data-spec="gastroenterology" onclick="setChip(this,'gastroenterology')">Gastroenterology</button>
+          <button class="chip" data-spec="cardiology" onclick="setChip(this,'cardiology')">Cardiology</button>
+          <button class="chip" data-spec="neurology" onclick="setChip(this,'neurology')">Neurology</button>
+          <button class="chip" data-spec="orthopedics" onclick="setChip(this,'orthopedics')">Orthopedics</button>
+          <button class="chip" data-spec="general medicine" onclick="setChip(this,'general medicine')">General Medicine</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="grid-meta" id="gridMeta">Showing all specialists</div>
+    <div class="doctors-grid" id="doctorsList">
+      <div class="no-results">Loading doctors from database...</div>
+    </div>
+  </div>
+
+  <div id="modal-login" class="overlay" onclick="closeIfOverlay(event,'modal-login')">
+    <div class="modal">
+      <div class="modal-head"><h3>Welcome back</h3><button class="modal-close" onclick="closeModal('login')">✕</button></div>
+      <form onsubmit="handleLogin(event)">
+        <div class="field"><label>Email</label><input type="email" id="loginEmail" placeholder="name@example.com" required></div>
+        <div class="field"><label>Password</label><input type="password" id="loginPassword" placeholder="Your password" required></div>
+        <button type="submit" class="btn-primary" style="width:100%;padding:12px;">Sign In</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="modal-register" class="overlay" onclick="closeIfOverlay(event,'modal-register')">
+    <div class="modal">
+      <div class="modal-head"><h3>Create account</h3><button class="modal-close" onclick="closeModal('register')">✕</button></div>
+      <form onsubmit="handleRegister(event)">
+        <div class="field"><label>Full Name</label><input type="text" id="regName" placeholder="Jane Doe" required></div>
+        <div class="field"><label>Email</label><input type="email" id="regEmail" placeholder="name@example.com" required></div>
+        <div class="field"><label>Password</label><input type="password" id="regPassword" placeholder="Create a password" required></div>
+        <div class="field"><label>I am a</label>
+          <select id="regRole" onchange="toggleSpec(this.value)">
+            <option value="patient">Patient</option><option value="doctor">Doctor</option>
+          </select>
+        </div>
+        <div class="field" id="specField" style="display:none;">
+          <label>Specialization</label><input type="text" id="regSpec" placeholder="e.g. Cardiologist">
+        </div>
+        <button type="submit" class="btn-primary" style="width:100%;padding:12px;">Create Account</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="modal-book" class="overlay" onclick="closeIfOverlay(event,'modal-book')">
+    <div class="modal">
+      <div class="modal-head"><h3>Book Appointment</h3><button class="modal-close" onclick="closeModal('book')">✕</button></div>
+      <form onsubmit="submitBooking(event)">
+        <div class="field"><label>Doctor</label><input type="text" id="bk-doctor" disabled></div>
+        <div class="field"><label>Date</label><input type="date" id="bk-date" required></div>
+        <div class="field"><label>Time</label><select id="bk-time" required><option value="">Select a date first</option></select></div>
+        <div class="field"><label>Symptoms (optional)</label><textarea id="bk-symptoms" placeholder="Briefly describe your symptoms…"></textarea></div>
+        <button type="submit" class="btn-primary" style="width:100%;padding:12px;">Confirm Booking</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script src="js/appointments.js"></script>
+  <script>
+    let activeSpec = 'all';
+    const BASE_API_URL = typeof API_URL !== 'undefined' ? API_URL : 'http://localhost:5000/api';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Setup Nav
+      if (typeof getUser === 'function') {
+        const user = getUser();
+        if (user) {
+          document.getElementById('navActions').innerHTML = `
+            <a href="dashboard.html" class="btn-ghost">Dashboard</a>
+            <button class="btn-primary" onclick="logout()">${user.name.split(' ')[0]}</button>
+          `;
+        }
+      }
+      // Load Grid
+      loadDoctors();
+    });
+
+    async function loadDoctors() {
+      const container = document.getElementById('doctorsList');
+      try {
+        const res = await fetch(`${BASE_API_URL}/doctors`);
+        if (!res.ok) throw new Error('Failed to fetch doctors');
+        
+        const doctors = await res.json();
+        container.innerHTML = ''; 
+
+        if (doctors.length === 0) {
+          container.innerHTML = '<div class="no-results">No doctors found in the database.</div>';
+          return;
+        }
+
+        doctors.forEach(doc => {
+          const docId = doc._id || doc.id; 
+          const name = doc.name;
+          const spec = doc.specialization || 'General Physician';
+          const initials = name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+          const colors = ['av-teal', 'av-green', 'av-coral', 'av-blue', 'av-purple', 'av-gold'];
+          const avatarColor = colors[name.length % colors.length];
+
+          const card = document.createElement('div');
+          card.className = 'doctor-card';
+          card.dataset.name = name.toLowerCase();
+          card.dataset.spec = spec.toLowerCase();
+
+          // Uses openBookingModal defined in js/appointments.js
+          card.innerHTML = `
+            <div class="dc-top">
+              <div class="avatar av-48 ${avatarColor}">${initials}</div>
+              <div><div class="dc-name">${name}</div><div class="dc-spec">${spec}</div></div>
+            </div>
+            <div class="badge badge-avail" style="margin-bottom:12px;">Available</div>
+            <div class="dc-meta"><strong>★ 4.9</strong> &nbsp;·&nbsp; Certified Expert</div>
+            <div class="dc-bottom">
+              <button class="btn-primary" onclick="openBookingModal('${docId}', '${name.replace(/'/g, "\\'")}', '${spec.replace(/'/g, "\\'")}')">Book Appointment</button>
+            </div>
+          `;
+          container.appendChild(card);
+        });
+
+        filterDoctors();
+      } catch (err) {
+        console.error('Error fetching doctors:', err);
+        container.innerHTML = '<div class="no-results">Error connecting to the database. Is the server running?</div>';
+      }
+    }
+
+    function setChip(el, spec) {
+      document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+      activeSpec = spec;
+      filterDoctors();
+    }
+
+    function filterDoctors() {
+      const q = document.getElementById('searchInput').value.toLowerCase();
+      const cards = document.querySelectorAll('.doctor-card');
+      let visible = 0;
+      cards.forEach(c => {
+        const name = c.dataset.name || '';
+        const spec = c.dataset.spec || '';
+        const matchQ = !q || name.includes(q) || spec.includes(q);
+        const matchS = activeSpec === 'all' || spec.includes(activeSpec);
+        const show = matchQ && matchS;
+        c.style.display = show ? '' : 'none';
+        if (show) visible++;
+      });
+      document.getElementById('gridMeta').textContent =
+        visible === cards.length ? `Showing all ${visible} specialists` : `Showing ${visible} of ${cards.length} specialists`;
+    }
+
+    function toggleSpec(v) {
+      document.getElementById('specField').style.display = v === 'doctor' ? 'block' : 'none';
+    }
+
+    // Auth handlers
+    async function handleLogin(e) {
+      e.preventDefault();
+      try {
+        const res = await fetch(`${BASE_API_URL}/auth/login`, {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ email: document.getElementById('loginEmail').value, password: document.getElementById('loginPassword').value })
+        });
+        if (res.ok) {
+          const d = await res.json();
+          localStorage.setItem('dt_token', d.token);
+          localStorage.setItem('dt_user', JSON.stringify(d.user));
+          if(typeof showToast === 'function') showToast(`Welcome back, ${d.user.name}!`, 'success');
+          if(typeof closeModal === 'function') closeModal('login');
+          setTimeout(() => location.reload(), 800);
+        } else { 
+          const err = await res.json(); 
+          if(typeof showToast === 'function') showToast(err.error||'Login failed','error'); 
+        }
+      } catch { 
+        if(typeof showToast === 'function') showToast('Network error','error'); 
+      }
+    }
+
+    async function handleRegister(e) {
+      e.preventDefault();
+      try {
+        const res = await fetch(`${BASE_API_URL}/auth/register`, {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({
+            name: document.getElementById('regName').value,
+            email: document.getElementById('regEmail').value,
+            password: document.getElementById('regPassword').value,
+            role: document.getElementById('regRole').value,
+            specialization: document.getElementById('regSpec')?.value||null
+          })
+        });
+        if (res.ok) {
+          const d = await res.json();
+          localStorage.setItem('dt_token', d.token);
+          localStorage.setItem('dt_user', JSON.stringify(d.user));
+          if(typeof showToast === 'function') showToast('Account created!', 'success');
+          if(typeof closeModal === 'function') closeModal('register');
+          setTimeout(() => location.reload(), 800);
+        } else { 
+          const err = await res.json(); 
+          if(typeof showToast === 'function') showToast(err.error||'Failed','error'); 
+        }
+      } catch { 
+        if(typeof showToast === 'function') showToast('Network error','error'); 
+      }
+    }
+  </script>
+</body>
+</html>
